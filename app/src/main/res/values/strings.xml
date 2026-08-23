@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">AnimeDB</string>
+    <string name="characters_title">Random characters</string>
+    <string name="characters_refresh">Refresh</string>
+    <string name="characters_retry">Retry</string>
+    <string name="characters_loading">Fetching random characters…</string>
+    <string name="characters_image">Portrait of %1$s</string>
+    <string name="characters_mal_id">MAL #%1$d</string>
+    <string name="characters_favorites">%1$d favorites</string>
+    <string name="characters_error_generic">Couldn\'t load characters. Try again.</string>
+    <string name="characters_error_network">No internet connection.</string>
+    <string name="characters_error_rate_limit">Jikan rate limit hit. Wait a moment and retry.</string>
+    <string name="characters_error_unavailable">MyAnimeList is unavailable right now.</string>
+</resources>
