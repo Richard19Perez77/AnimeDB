@@ -1,9 +1,11 @@
-package com.rick.animedb.feature.manga.presentation.mvvm
+package com.rick.animedb.feature.manga.presentation.mvvm.route
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.rick.animedb.feature.manga.presentation.mvvm.screen.MangaScreen
+import com.rick.animedb.feature.manga.presentation.mvvm.state.MangaViewModel
 
 @Composable
 fun MangaRoute(

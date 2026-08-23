@@ -1,4 +1,4 @@
-package com.rick.animedb.feature.manga.presentation.mvvm
+package com.rick.animedb.feature.manga.presentation.mvvm.state
 
 import com.rick.animedb.feature.manga.domain.model.Manga
 import retrofit2.HttpException

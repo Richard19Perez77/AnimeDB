@@ -1,4 +1,4 @@
-package com.rick.animedb.feature.manga.presentation.mvvm
+package com.rick.animedb.feature.manga.presentation.mvvm.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.rick.animedb.R
 import com.rick.animedb.feature.manga.domain.model.Manga
+import com.rick.animedb.feature.manga.presentation.mvvm.state.MangaError
+import com.rick.animedb.feature.manga.presentation.mvvm.state.MangaUiState
 import com.rick.animedb.ui.theme.AnimeDBTheme
 
 @OptIn(ExperimentalMaterial3Api::class)

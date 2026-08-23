@@ -1,4 +1,4 @@
-package com.rick.animedb.feature.manga.presentation.mvvm
+package com.rick.animedb.feature.manga.presentation.mvvm.state
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

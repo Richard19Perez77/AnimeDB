@@ -1,4 +1,4 @@
-package com.rick.animedb.feature.manga.presentation.mvvm
+package com.rick.animedb.feature.manga.presentation.mvvm.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +42,8 @@ import com.rick.animedb.feature.manga.domain.model.LabeledValue
 import com.rick.animedb.feature.manga.domain.model.Manga
 import com.rick.animedb.feature.manga.domain.model.MangaCredit
 import com.rick.animedb.feature.manga.domain.model.MangaCreditRole
+import com.rick.animedb.feature.manga.presentation.mvvm.state.MangaDetailUiState
+import com.rick.animedb.feature.manga.presentation.mvvm.state.MangaError
 import com.rick.animedb.ui.components.LinkifiedText
 import com.rick.animedb.ui.theme.AnimeDBTheme
 
