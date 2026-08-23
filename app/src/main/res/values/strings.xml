@@ -22,6 +22,7 @@
     <string name="manga_detail_credits">Credits</string>
     <string name="manga_detail_related">Related</string>
     <string name="manga_detail_cover">Cover</string>
+    <string name="manga_detail_language">Language</string>
     <string name="manga_yes">Yes</string>
     <string name="manga_no">No</string>
     <string name="manga_credit_author">Author</string>

@@ -4,9 +4,12 @@ import com.rick.animedb.feature.manga.data.remote.MangaDto
 import com.rick.animedb.feature.manga.data.remote.RelationshipAttributesDto
 import com.rick.animedb.feature.manga.data.remote.RelationshipDto
 import com.rick.animedb.feature.manga.domain.model.LabeledValue
+import com.rick.animedb.feature.manga.domain.model.LocalizedText
 import com.rick.animedb.feature.manga.domain.model.Manga
 import com.rick.animedb.feature.manga.domain.model.MangaCredit
 import com.rick.animedb.feature.manga.domain.model.MangaCreditRole
+import com.rick.animedb.feature.manga.domain.model.MangaTag
+import com.rick.animedb.feature.manga.domain.model.pickLanguage
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -71,16 +74,16 @@ fun MangaDto.toDomain(): Manga? {
         status = humanizeToken(attrs?.status),
         year = attrs?.year,
         contentRating = humanizeToken(attrs?.contentRating),
-        tags = attrs?.tags.orEmpty().mapNotNull { tag ->
-            localizedValue(tag.attributes?.name)
-        }.distinct(),
+        tags = attrs?.tags.orEmpty().map { tag ->
+            MangaTag(names = localizedTexts(tag.attributes?.name))
+        }.filter { it.names.isNotEmpty() },
         coverUrl = coverFileName?.let { fileName ->
             "$CoverCdn/$mangaId/$fileName.256.jpg"
         },
         type = humanizeToken(type),
-        titles = localizedFields(attrs?.title),
-        altTitles = attrs?.altTitles.orEmpty().flatMap(::localizedFields).distinct(),
-        descriptions = localizedFields(attrs?.description),
+        titles = localizedTexts(attrs?.title),
+        altTitles = attrs?.altTitles.orEmpty().flatMap(::localizedTexts).distinct(),
+        descriptions = localizedTexts(attrs?.description),
         originalLanguage = attrs?.originalLanguage?.let(::languageName),
         publicationDemographic = humanizeToken(attrs?.publicationDemographic),
         lastVolume = attrs?.lastVolume?.takeIf { it.isNotBlank() },
@@ -143,7 +146,7 @@ private fun buildCredits(relationships: List<RelationshipDto>?): List<MangaCredi
         MangaCredit(
             name = name,
             role = role,
-            biography = localizedValue(rel.attributes.biography)?.trim()?.takeIf { it.isNotBlank() },
+            biographies = localizedTexts(rel.attributes.biography),
             links = rel.attributes.toSocialLinks(),
         )
     }
@@ -243,15 +246,26 @@ private fun JsonElement?.toLabeledValues(fallbackLabel: String): List<LabeledVal
     }.flatten()
 }
 
-private fun localizedFields(values: Map<String, String>?): List<LabeledValue> =
+private fun localizedTexts(values: Map<String, String>?): List<LocalizedText> =
     values.orEmpty()
         .filter { it.value.isNotBlank() }
         .map { (language, text) ->
-            LabeledValue(languageName(language), text.trim())
+            LocalizedText(
+                languageCode = language,
+                languageName = languageName(language),
+                value = text.trim(),
+            )
         }
 
 private fun localizedValue(values: Map<String, String>?): String? {
     if (values.isNullOrEmpty()) return null
+    val preferred = pickLanguage(values.keys)
+    preferred?.let { code ->
+        values.entries.firstOrNull { it.key.equals(code, ignoreCase = true) }
+            ?.value
+            ?.takeIf { it.isNotBlank() }
+            ?.let { return it }
+    }
     TitleLanguagePriority.forEach { language ->
         values[language]?.takeIf { it.isNotBlank() }?.let { return it }
     }

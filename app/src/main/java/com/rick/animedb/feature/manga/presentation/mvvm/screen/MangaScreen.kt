@@ -39,7 +39,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.rick.animedb.R
+import com.rick.animedb.feature.manga.domain.model.LocalizedText
 import com.rick.animedb.feature.manga.domain.model.Manga
+import com.rick.animedb.feature.manga.domain.model.MangaTag
+import com.rick.animedb.feature.manga.domain.model.preferredValue
 import com.rick.animedb.feature.manga.presentation.mvvm.state.MangaError
 import com.rick.animedb.feature.manga.presentation.mvvm.state.MangaUiState
 import com.rick.animedb.ui.theme.AnimeDBTheme
@@ -225,7 +228,7 @@ private fun MangaCard(
                 if (manga.tags.isNotEmpty()) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = manga.tags.take(8).joinToString(" · "),
+                        text = manga.tags.mapNotNull { it.names.preferredValue() }.take(8).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
@@ -261,7 +264,11 @@ private fun MangaScreenSuccessPreview() {
                         status = "Completed",
                         year = 2018,
                         contentRating = "Safe",
-                        tags = listOf("Action", "Adventure", "Fantasy"),
+                        tags = listOf(
+                            MangaTag(listOf(LocalizedText("en", "English", "Action"))),
+                            MangaTag(listOf(LocalizedText("en", "English", "Adventure"))),
+                            MangaTag(listOf(LocalizedText("en", "English", "Fantasy"))),
+                        ),
                     ),
                 ),
             ),

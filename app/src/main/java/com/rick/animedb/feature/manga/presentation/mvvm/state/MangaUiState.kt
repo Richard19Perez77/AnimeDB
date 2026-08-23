@@ -1,5 +1,6 @@
 package com.rick.animedb.feature.manga.presentation.mvvm.state
 
+import com.rick.animedb.feature.manga.domain.model.LanguageOption
 import com.rick.animedb.feature.manga.domain.model.Manga
 import retrofit2.HttpException
 import java.io.IOException
@@ -12,7 +13,11 @@ sealed interface MangaUiState {
 
 sealed interface MangaDetailUiState {
     data object Loading : MangaDetailUiState
-    data class Success(val manga: Manga) : MangaDetailUiState
+    data class Success(
+        val manga: Manga,
+        val languages: List<LanguageOption> = emptyList(),
+        val selectedLanguageCode: String = "",
+    ) : MangaDetailUiState
     data class Error(val reason: MangaError) : MangaDetailUiState
 }
 

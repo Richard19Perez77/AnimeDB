@@ -8,12 +8,12 @@ data class Manga(
     val status: String? = null,
     val year: Int? = null,
     val contentRating: String? = null,
-    val tags: List<String> = emptyList(),
+    val tags: List<MangaTag> = emptyList(),
     val coverUrl: String? = null,
     val type: String? = null,
-    val titles: List<LabeledValue> = emptyList(),
-    val altTitles: List<LabeledValue> = emptyList(),
-    val descriptions: List<LabeledValue> = emptyList(),
+    val titles: List<LocalizedText> = emptyList(),
+    val altTitles: List<LocalizedText> = emptyList(),
+    val descriptions: List<LocalizedText> = emptyList(),
     val originalLanguage: String? = null,
     val publicationDemographic: String? = null,
     val lastVolume: String? = null,
@@ -44,7 +44,7 @@ data class LabeledValue(
 data class MangaCredit(
     val name: String,
     val role: MangaCreditRole,
-    val biography: String? = null,
+    val biographies: List<LocalizedText> = emptyList(),
     val links: List<LabeledValue> = emptyList(),
 )
 

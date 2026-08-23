@@ -17,5 +17,6 @@ fun MangaDetailRoute(
         uiState = uiState,
         onBack = onBack,
         onRetry = viewModel::retry,
+        onLanguageSelected = viewModel::selectLanguage,
     )
 }

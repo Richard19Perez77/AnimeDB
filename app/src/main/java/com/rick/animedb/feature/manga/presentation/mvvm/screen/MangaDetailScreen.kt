@@ -20,15 +20,24 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,9 +48,15 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.rick.animedb.R
 import com.rick.animedb.feature.manga.domain.model.LabeledValue
+import com.rick.animedb.feature.manga.domain.model.LanguageOption
+import com.rick.animedb.feature.manga.domain.model.LocalizedText
 import com.rick.animedb.feature.manga.domain.model.Manga
 import com.rick.animedb.feature.manga.domain.model.MangaCredit
 import com.rick.animedb.feature.manga.domain.model.MangaCreditRole
+import com.rick.animedb.feature.manga.domain.model.MangaTag
+import com.rick.animedb.feature.manga.domain.model.nameFor
+import com.rick.animedb.feature.manga.domain.model.valueFor
+import com.rick.animedb.feature.manga.domain.model.valuesFor
 import com.rick.animedb.feature.manga.presentation.mvvm.state.MangaDetailUiState
 import com.rick.animedb.feature.manga.presentation.mvvm.state.MangaError
 import com.rick.animedb.ui.components.LinkifiedText
@@ -53,10 +68,12 @@ fun MangaDetailScreen(
     uiState: MangaDetailUiState,
     onBack: () -> Unit,
     onRetry: () -> Unit,
+    onLanguageSelected: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val title = when (uiState) {
-        is MangaDetailUiState.Success -> uiState.manga.title
+        is MangaDetailUiState.Success ->
+            uiState.manga.titles.valueFor(uiState.selectedLanguageCode) ?: uiState.manga.title
         else -> stringResource(R.string.manga_detail_title)
     }
 
@@ -96,6 +113,9 @@ fun MangaDetailScreen(
 
             is MangaDetailUiState.Success -> DetailContent(
                 manga = uiState.manga,
+                languages = uiState.languages,
+                selectedLanguageCode = uiState.selectedLanguageCode,
+                onLanguageSelected = onLanguageSelected,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
@@ -130,96 +150,158 @@ fun MangaDetailScreen(
 @Composable
 private fun DetailContent(
     manga: Manga,
+    languages: List<LanguageOption>,
+    selectedLanguageCode: String,
+    onLanguageSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val title = manga.titles.valueFor(selectedLanguageCode) ?: manga.title
+    val altTitles = manga.altTitles.valuesFor(selectedLanguageCode).filter { it != title }
+    val description = manga.descriptions.valueFor(selectedLanguageCode) ?: manga.description
+    val tags = manga.tags.mapNotNull { it.nameFor(selectedLanguageCode) }.distinct()
     val details = detailFields(manga)
     val coverFields = coverFields(manga)
 
-    SelectionContainer(modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            Header(manga)
-
-            if (manga.descriptions.isNotEmpty()) {
-                LabeledSection(title = stringResource(R.string.manga_detail_synopsis)) {
-                    FieldList(manga.descriptions)
-                }
-            } else {
-                manga.description?.let { synopsis ->
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Header(
+            coverUrl = manga.coverUrl,
+            title = title,
+            altTitle = altTitles.firstOrNull() ?: manga.altTitle?.takeIf { it != title },
+            year = manga.year,
+            status = manga.status,
+            contentRating = manga.contentRating,
+        )
+        LanguageSelector(
+            languages = languages,
+            selectedLanguageCode = selectedLanguageCode,
+            onLanguageSelected = onLanguageSelected,
+        )
+        SelectionContainer {
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                description?.let { synopsis ->
                     LabeledSection(title = stringResource(R.string.manga_detail_synopsis)) {
                         LinkifiedText(text = synopsis)
                     }
                 }
-            }
 
-            if (manga.titles.isNotEmpty()) {
-                LabeledSection(title = stringResource(R.string.manga_detail_titles)) {
-                    FieldList(manga.titles)
+                val extraAltTitles = altTitles.drop(if (manga.altTitle != null || altTitles.isNotEmpty()) 1 else 0)
+                if (extraAltTitles.isNotEmpty()) {
+                    LabeledSection(title = stringResource(R.string.manga_detail_alt_titles)) {
+                        Text(
+                            text = extraAltTitles.joinToString("\n"),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
                 }
-            }
 
-            if (manga.altTitles.isNotEmpty()) {
-                LabeledSection(title = stringResource(R.string.manga_detail_alt_titles)) {
-                    FieldList(manga.altTitles)
+                if (details.isNotEmpty()) {
+                    LabeledSection(title = stringResource(R.string.manga_detail_details)) {
+                        FieldList(details)
+                    }
                 }
-            }
 
-            if (details.isNotEmpty()) {
-                LabeledSection(title = stringResource(R.string.manga_detail_details)) {
-                    FieldList(details)
+                if (tags.isNotEmpty()) {
+                    LabeledSection(title = stringResource(R.string.manga_detail_tags)) {
+                        Text(
+                            text = tags.joinToString(", "),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
                 }
-            }
 
-            if (manga.tags.isNotEmpty()) {
-                LabeledSection(title = stringResource(R.string.manga_detail_tags)) {
-                    Text(
-                        text = manga.tags.joinToString(", "),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
+                if (coverFields.isNotEmpty()) {
+                    LabeledSection(title = stringResource(R.string.manga_detail_cover)) {
+                        FieldList(coverFields)
+                    }
                 }
-            }
 
-            if (coverFields.isNotEmpty()) {
-                LabeledSection(title = stringResource(R.string.manga_detail_cover)) {
-                    FieldList(coverFields)
+                if (manga.links.isNotEmpty()) {
+                    LabeledSection(title = stringResource(R.string.manga_detail_links)) {
+                        FieldList(manga.links)
+                    }
                 }
-            }
 
-            if (manga.links.isNotEmpty()) {
-                LabeledSection(title = stringResource(R.string.manga_detail_links)) {
-                    FieldList(manga.links)
-                }
-            }
-
-            if (manga.credits.isNotEmpty()) {
-                LabeledSection(title = stringResource(R.string.manga_detail_credits)) {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        manga.credits.forEach { credit ->
-                            CreditBlock(credit)
+                if (manga.credits.isNotEmpty()) {
+                    LabeledSection(title = stringResource(R.string.manga_detail_credits)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            manga.credits.forEach { credit ->
+                                CreditBlock(credit, selectedLanguageCode)
+                            }
                         }
                     }
                 }
-            }
 
-            if (manga.related.isNotEmpty()) {
-                LabeledSection(title = stringResource(R.string.manga_detail_related)) {
-                    FieldList(manga.related)
+                if (manga.related.isNotEmpty()) {
+                    LabeledSection(title = stringResource(R.string.manga_detail_related)) {
+                        FieldList(manga.related)
+                    }
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Header(manga: Manga) {
+private fun LanguageSelector(
+    languages: List<LanguageOption>,
+    selectedLanguageCode: String,
+    onLanguageSelected: (String) -> Unit,
+) {
+    if (languages.size <= 1) return
+    var expanded by remember { mutableStateOf(false) }
+    val selected = languages.firstOrNull { it.code.equals(selectedLanguageCode, ignoreCase = true) }
+        ?: languages.first()
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+    ) {
+        OutlinedTextField(
+            value = selected.name,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.manga_detail_language)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            languages.forEach { language ->
+                DropdownMenuItem(
+                    text = { Text(language.name) },
+                    onClick = {
+                        onLanguageSelected(language.code)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun Header(
+    coverUrl: String?,
+    title: String,
+    altTitle: String?,
+    year: Int?,
+    status: String?,
+    contentRating: String?,
+) {
     Row(modifier = Modifier.fillMaxWidth()) {
         AsyncImage(
-            model = manga.coverUrl,
-            contentDescription = stringResource(R.string.manga_cover, manga.title),
+            model = coverUrl,
+            contentDescription = stringResource(R.string.manga_cover, title),
             modifier = Modifier
                 .size(width = 112.dp, height = 158.dp)
                 .clip(RoundedCornerShape(8.dp))
@@ -228,8 +310,8 @@ private fun Header(manga: Manga) {
         )
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = manga.title, style = MaterialTheme.typography.headlineSmall)
-            manga.altTitle?.let {
+            Text(text = title, style = MaterialTheme.typography.headlineSmall)
+            altTitle?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodyMedium,
@@ -237,9 +319,9 @@ private fun Header(manga: Manga) {
                 )
             }
             val subtitle = listOfNotNull(
-                manga.year?.toString(),
-                manga.status,
-                manga.contentRating,
+                year?.toString(),
+                status,
+                contentRating,
             ).joinToString(" · ")
             if (subtitle.isNotBlank()) {
                 Spacer(Modifier.height(8.dp))
@@ -350,14 +432,17 @@ private fun LabeledField(
 }
 
 @Composable
-private fun CreditBlock(credit: MangaCredit) {
+private fun CreditBlock(
+    credit: MangaCredit,
+    languageCode: String,
+) {
     val role = when (credit.role) {
         MangaCreditRole.Author -> stringResource(R.string.manga_credit_author)
         MangaCreditRole.Artist -> stringResource(R.string.manga_credit_artist)
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         LabeledField(label = role, value = credit.name)
-        credit.biography?.let { biography ->
+        credit.biographies.valueFor(languageCode)?.let { biography ->
             LabeledField(
                 label = stringResource(R.string.manga_credit_biography),
                 value = biography,
@@ -375,7 +460,7 @@ private fun MangaDetailScreenPreview() {
     AnimeDBTheme {
         MangaDetailScreen(
             uiState = MangaDetailUiState.Success(
-                Manga(
+                manga = Manga(
                     id = "preview",
                     title = "Solo Leveling",
                     altTitle = "Ore Dake Level Up na Ken",
@@ -383,11 +468,22 @@ private fun MangaDetailScreenPreview() {
                     status = "Completed",
                     year = 2018,
                     contentRating = "Safe",
-                    tags = listOf("Action", "Adventure", "Fantasy"),
+                    tags = listOf(
+                        MangaTag(listOf(LocalizedText("en", "English", "Action"))),
+                        MangaTag(listOf(LocalizedText("en", "English", "Adventure"))),
+                    ),
                     type = "Manga",
                     titles = listOf(
-                        LabeledValue("English", "Solo Leveling"),
-                        LabeledValue("Japanese", "俺だけレベルアップな件"),
+                        LocalizedText("en", "English", "Solo Leveling"),
+                        LocalizedText("ja", "Japanese", "俺だけレベルアップな件"),
+                    ),
+                    descriptions = listOf(
+                        LocalizedText(
+                            "en",
+                            "English",
+                            "A hunter who was once the weakest begins to level up alone.",
+                        ),
+                        LocalizedText("ja", "Japanese", "最弱だったハンターが一人でレベルアップしていく。"),
                     ),
                     originalLanguage = "Japanese",
                     publicationDemographic = "Shounen",
@@ -415,6 +511,11 @@ private fun MangaDetailScreenPreview() {
                         ),
                     ),
                 ),
+                languages = listOf(
+                    LanguageOption("en", "English"),
+                    LanguageOption("ja", "Japanese"),
+                ),
+                selectedLanguageCode = "en",
             ),
             onBack = {},
             onRetry = {},
