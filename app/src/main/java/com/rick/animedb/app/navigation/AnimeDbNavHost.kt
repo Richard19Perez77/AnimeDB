@@ -1,4 +1,4 @@
-package com.rick.animedb.navigation
+package com.rick.animedb.app.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
