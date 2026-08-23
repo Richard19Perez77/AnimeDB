@@ -5,6 +5,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface MangaApi {
+
     @GET("manga")
     suspend fun getManga(
         @Query("limit") limit: Int = 20,

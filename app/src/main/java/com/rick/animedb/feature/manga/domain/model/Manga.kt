@@ -38,6 +38,7 @@ data class Manga(
 data class LabeledValue(
     val label: String,
     val value: String,
+    val url: String? = null,
 )
 
 data class MangaCredit(

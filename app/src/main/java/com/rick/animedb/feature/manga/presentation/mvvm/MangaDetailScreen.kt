@@ -42,6 +42,7 @@ import com.rick.animedb.feature.manga.domain.model.LabeledValue
 import com.rick.animedb.feature.manga.domain.model.Manga
 import com.rick.animedb.feature.manga.domain.model.MangaCredit
 import com.rick.animedb.feature.manga.domain.model.MangaCreditRole
+import com.rick.animedb.ui.components.LinkifiedText
 import com.rick.animedb.ui.theme.AnimeDBTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -148,7 +149,7 @@ private fun DetailContent(
             } else {
                 manga.description?.let { synopsis ->
                     LabeledSection(title = stringResource(R.string.manga_detail_synopsis)) {
-                        Text(text = synopsis, style = MaterialTheme.typography.bodyLarge)
+                        LinkifiedText(text = synopsis)
                     }
                 }
             }
@@ -252,7 +253,11 @@ private fun Header(manga: Manga) {
 
 @Composable
 private fun detailFields(manga: Manga): List<LabeledValue> = buildList {
-    add(stringResource(R.string.manga_field_id), manga.id)
+    add(
+        stringResource(R.string.manga_field_id),
+        manga.id,
+        url = "https://mangadex.org/title/${manga.id}",
+    )
     add(stringResource(R.string.manga_field_type), manga.type)
     add(stringResource(R.string.manga_field_status), manga.status)
     add(stringResource(R.string.manga_field_year), manga.year?.toString())
@@ -265,7 +270,11 @@ private fun detailFields(manga: Manga): List<LabeledValue> = buildList {
     )
     add(stringResource(R.string.manga_field_last_volume), manga.lastVolume)
     add(stringResource(R.string.manga_field_last_chapter), manga.lastChapter)
-    add(stringResource(R.string.manga_field_latest_chapter), manga.latestUploadedChapter)
+    add(
+        stringResource(R.string.manga_field_latest_chapter),
+        manga.latestUploadedChapter,
+        url = manga.latestUploadedChapter?.let { "https://mangadex.org/chapter/$it" },
+    )
     add(stringResource(R.string.manga_field_state), manga.state)
     add(stringResource(R.string.manga_field_locked), manga.isLocked.toYesNo())
     add(
@@ -290,8 +299,8 @@ private fun Boolean?.toYesNo(): String? = this?.let {
     stringResource(if (it) R.string.manga_yes else R.string.manga_no)
 }
 
-private fun MutableList<LabeledValue>.add(label: String, value: String?) {
-    if (!value.isNullOrBlank()) add(LabeledValue(label, value))
+private fun MutableList<LabeledValue>.add(label: String, value: String?, url: String? = null) {
+    if (!value.isNullOrBlank()) add(LabeledValue(label, value, url))
 }
 
 @Composable
@@ -313,7 +322,7 @@ private fun LabeledSection(
 private fun FieldList(fields: List<LabeledValue>) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         fields.forEachIndexed { index, field ->
-            LabeledField(label = field.label, value = field.value)
+            LabeledField(label = field.label, value = field.value, url = field.url)
             if (index < fields.lastIndex) {
                 HorizontalDivider()
             }
@@ -325,6 +334,7 @@ private fun FieldList(fields: List<LabeledValue>) {
 private fun LabeledField(
     label: String,
     value: String,
+    url: String? = null,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -333,10 +343,7 @@ private fun LabeledField(
             color = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.height(2.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-        )
+        LinkifiedText(text = value, url = url)
     }
 }
 
@@ -355,7 +362,7 @@ private fun CreditBlock(credit: MangaCredit) {
             )
         }
         credit.links.forEach { link ->
-            LabeledField(label = link.label, value = link.value)
+            LabeledField(label = link.label, value = link.value, url = link.url)
         }
     }
 }
@@ -385,11 +392,25 @@ private fun MangaDetailScreenPreview() {
                     lastVolume = "18",
                     lastChapter = "179",
                     credits = listOf(
-                        MangaCredit(name = "Chugong", role = MangaCreditRole.Author),
+                        MangaCredit(
+                            name = "Chugong",
+                            role = MangaCreditRole.Author,
+                            links = listOf(
+                                LabeledValue(
+                                    label = "Twitter",
+                                    value = "@solo_leveling",
+                                    url = "https://x.com/solo_leveling",
+                                ),
+                            ),
+                        ),
                         MangaCredit(name = "Dubu", role = MangaCreditRole.Artist),
                     ),
                     links = listOf(
-                        LabeledValue("MyAnimeList", "https://myanimelist.net/manga/121496"),
+                        LabeledValue(
+                            label = "MyAnimeList",
+                            value = "https://myanimelist.net/manga/121496",
+                            url = "https://myanimelist.net/manga/121496",
+                        ),
                     ),
                 ),
             ),

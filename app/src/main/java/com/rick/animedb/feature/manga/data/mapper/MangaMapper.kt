@@ -40,12 +40,15 @@ private val LinkLabels = mapOf(
     "engtl" to "Official English",
 )
 
+private const val MangaDexTitleUrl = "https://mangadex.org/title/%s"
+
 private val LinkUrls = mapOf(
     "al" to "https://anilist.co/manga/%s",
     "ap" to "https://www.anime-planet.com/manga/%s",
     "mal" to "https://myanimelist.net/manga/%s",
     "kt" to "https://kitsu.app/manga/%s",
     "mu" to "https://www.mangaupdates.com/series.html?id=%s",
+    "nu" to "https://www.novelupdates.com/series/%s/",
 )
 
 fun MangaDto.toDomain(): Manga? {
@@ -101,6 +104,7 @@ fun MangaDto.toDomain(): Manga? {
                 LabeledValue(
                     label = humanizeToken(rel.related) ?: "Related",
                     value = rel.attributes?.name?.takeIf { it.isNotBlank() } ?: rel.id.orEmpty(),
+                    url = MangaDexTitleUrl.format(rel.id),
                 )
             },
         coverFileName = coverFileName,
@@ -117,11 +121,11 @@ private fun buildLinks(
     val fromLinks = links.orEmpty()
         .filter { it.value.isNotBlank() }
         .map { (key, value) ->
+            val url = expandExternalLink(key, value)
             LabeledValue(
                 label = LinkLabels[key] ?: humanizeKey(key),
-                value = LinkUrls[key]?.let { pattern ->
-                    if (value.startsWith("http")) value else pattern.format(value)
-                } ?: value,
+                value = url,
+                url = url.takeIf(::isHttpUrl),
             )
         }
     val fromOfficial = officialLinks.toLabeledValues("Official link")
@@ -146,29 +150,89 @@ private fun buildCredits(relationships: List<RelationshipDto>?): List<MangaCredi
 }
 
 private fun RelationshipAttributesDto.toSocialLinks(): List<LabeledValue> = listOfNotNull(
-    labeled("Twitter", twitter),
-    labeled("Pixiv", pixiv),
-    labeled("Melonbooks", melonBook),
-    labeled("Fanbox", fanBox),
-    labeled("Booth", booth),
-    labeled("Namicomi", namicomi),
-    labeled("Niconico", nicoVideo),
-    labeled("Skeb", skeb),
-    labeled("Fantia", fantia),
-    labeled("Tumblr", tumblr),
-    labeled("YouTube", youtube),
-    labeled("Weibo", weibo),
-    labeled("Naver", naver),
-    labeled("Website", website),
+    socialLink("Twitter", twitter, ::twitterUrl),
+    socialLink("Pixiv", pixiv, ::pixivUrl),
+    socialLink("Melonbooks", melonBook),
+    socialLink("Fanbox", fanBox),
+    socialLink("Booth", booth),
+    socialLink("Namicomi", namicomi),
+    socialLink("Niconico", nicoVideo),
+    socialLink("Skeb", skeb, ::skebUrl),
+    socialLink("Fantia", fantia),
+    socialLink("Tumblr", tumblr),
+    socialLink("YouTube", youtube, ::youtubeUrl),
+    socialLink("Weibo", weibo),
+    socialLink("Naver", naver),
+    socialLink("Website", website),
 )
 
-private fun labeled(label: String, value: String?): LabeledValue? =
-    value?.takeIf { it.isNotBlank() }?.let { LabeledValue(label, it) }
+private fun socialLink(
+    label: String,
+    value: String?,
+    expand: (String) -> String = ::ensureHttpUrl,
+): LabeledValue? {
+    val raw = value?.trim()?.takeIf { it.isNotBlank() } ?: return null
+    val url = expand(raw).takeIf(::isHttpUrl)
+    return LabeledValue(label = label, value = raw, url = url)
+}
+
+private fun expandExternalLink(key: String, value: String): String {
+    val trimmed = value.trim()
+    if (isHttpUrl(trimmed)) return trimmed
+    return when (key) {
+        "bw" -> if (trimmed.startsWith("/")) {
+            "https://bookwalker.jp$trimmed"
+        } else {
+            "https://bookwalker.jp/$trimmed"
+        }
+        "amz", "ebj", "cdj", "raw", "engtl" -> ensureHttpUrl(trimmed)
+        else -> LinkUrls[key]?.format(trimmed) ?: ensureHttpUrl(trimmed)
+    }
+}
+
+private fun twitterUrl(value: String): String {
+    if (isHttpUrl(value)) return value
+    return "https://x.com/${value.removePrefix("@")}"
+}
+
+private fun pixivUrl(value: String): String {
+    if (isHttpUrl(value)) return value
+    val id = value.removePrefix("@")
+    return if (id.all(Char::isDigit)) {
+        "https://www.pixiv.net/users/$id"
+    } else {
+        ensureHttpUrl(value)
+    }
+}
+
+private fun skebUrl(value: String): String {
+    if (isHttpUrl(value)) return value
+    return "https://skeb.jp/@${value.removePrefix("@")}"
+}
+
+private fun youtubeUrl(value: String): String {
+    if (isHttpUrl(value)) return value
+    val handle = if (value.startsWith("@")) value else "@$value"
+    return "https://www.youtube.com/$handle"
+}
+
+private fun ensureHttpUrl(value: String): String = when {
+    isHttpUrl(value) -> value
+    value.contains('.') && !value.contains(' ') -> "https://${value.removePrefix("//")}"
+    else -> value
+}
+
+private fun isHttpUrl(value: String): Boolean =
+    value.startsWith("https://", ignoreCase = true) ||
+        value.startsWith("http://", ignoreCase = true)
 
 private fun JsonElement?.toLabeledValues(fallbackLabel: String): List<LabeledValue> = when (this) {
     null -> emptyList()
     is JsonPrimitive -> listOfNotNull(
-        content.takeIf { it.isNotBlank() }?.let { LabeledValue(fallbackLabel, it) },
+        content.takeIf { it.isNotBlank() }?.let { raw ->
+            val url = ensureHttpUrl(raw)
+            LabeledValue(fallbackLabel, raw, url.takeIf(::isHttpUrl))
+        },
     )
     is JsonObject -> entries.flatMap { (key, value) ->
         value.toLabeledValues(LinkLabels[key] ?: humanizeKey(key))
@@ -177,7 +241,6 @@ private fun JsonElement?.toLabeledValues(fallbackLabel: String): List<LabeledVal
         val label = if (size == 1) fallbackLabel else "$fallbackLabel ${index + 1}"
         element.toLabeledValues(label)
     }.flatten()
-    else -> emptyList()
 }
 
 private fun localizedFields(values: Map<String, String>?): List<LabeledValue> =
