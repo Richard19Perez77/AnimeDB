@@ -10,4 +10,5 @@ data class Manga(
     val contentRating: String?,
     val tags: List<String>,
     val coverUrl: String?,
+    val rawJson: String,
 )

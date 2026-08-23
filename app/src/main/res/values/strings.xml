@@ -10,4 +10,7 @@
     <string name="manga_error_network">No internet connection.</string>
     <string name="manga_error_rate_limit">MangaDex rate limit hit. Wait a moment and retry.</string>
     <string name="manga_error_unavailable">MangaDex is unavailable right now.</string>
+    <string name="manga_detail_back">Back</string>
+    <string name="manga_detail_response">API response</string>
+    <string name="manga_detail_loading">Fetching manga details…</string>
 </resources>

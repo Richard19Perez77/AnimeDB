@@ -2,12 +2,18 @@ package com.rick.animedb.app.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.rick.animedb.feature.manga.presentation.mvvm.MangaDetailRoute
+import com.rick.animedb.feature.manga.presentation.mvvm.MangaDetailViewModel
 import com.rick.animedb.feature.manga.presentation.mvvm.MangaRoute
 
-private const val MangaRoutePattern = "manga"
+private const val MangaListRoute = "manga"
+private const val MangaDetailRoutePattern =
+    "manga/{${MangaDetailViewModel.MangaIdArg}}"
 
 @Composable
 fun AnimeDbNavHost(
@@ -15,10 +21,26 @@ fun AnimeDbNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = MangaRoutePattern,
+        startDestination = MangaListRoute,
     ) {
-        composable(MangaRoutePattern) {
-            MangaRoute()
+        composable(MangaListRoute) {
+            MangaRoute(
+                onMangaClick = { mangaId ->
+                    navController.navigate("manga/$mangaId")
+                },
+            )
+        }
+        composable(
+            route = MangaDetailRoutePattern,
+            arguments = listOf(
+                navArgument(MangaDetailViewModel.MangaIdArg) {
+                    type = NavType.StringType
+                },
+            ),
+        ) {
+            MangaDetailRoute(
+                onBack = { navController.popBackStack() },
+            )
         }
     }
 }

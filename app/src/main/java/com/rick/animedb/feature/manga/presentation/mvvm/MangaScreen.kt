@@ -47,6 +47,7 @@ import com.rick.animedb.ui.theme.AnimeDBTheme
 fun MangaScreen(
     uiState: MangaUiState,
     onRetry: () -> Unit,
+    onMangaClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -78,6 +79,7 @@ fun MangaScreen(
             is MangaUiState.Success -> MangaList(
                 manga = uiState.manga,
                 contentPadding = innerPadding,
+                onMangaClick = onMangaClick,
             )
 
             is MangaUiState.Error -> ErrorContent(
@@ -141,6 +143,7 @@ private fun ErrorContent(
 private fun MangaList(
     manga: List<Manga>,
     contentPadding: PaddingValues,
+    onMangaClick: (String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -153,7 +156,10 @@ private fun MangaList(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(manga, key = { it.id }) { item ->
-            MangaCard(item)
+            MangaCard(
+                manga = item,
+                onClick = { onMangaClick(item.id) },
+            )
         }
         item {
             Text(
@@ -169,8 +175,12 @@ private fun MangaList(
 }
 
 @Composable
-private fun MangaCard(manga: Manga) {
+private fun MangaCard(
+    manga: Manga,
+    onClick: () -> Unit,
+) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(),
     ) {
@@ -251,10 +261,12 @@ private fun MangaScreenSuccessPreview() {
                         contentRating = "safe",
                         tags = listOf("Action", "Adventure", "Fantasy"),
                         coverUrl = null,
+                        rawJson = "{}",
                     ),
                 ),
             ),
             onRetry = {},
+            onMangaClick = {},
         )
     }
 }

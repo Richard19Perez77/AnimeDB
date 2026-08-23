@@ -6,14 +6,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun MangaRoute(
-    onMangaClick: (String) -> Unit,
-    viewModel: MangaViewModel = hiltViewModel(),
+fun MangaDetailRoute(
+    onBack: () -> Unit,
+    viewModel: MangaDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    MangaScreen(
+    MangaDetailScreen(
         uiState = uiState,
+        onBack = onBack,
         onRetry = viewModel::retry,
-        onMangaClick = onMangaClick,
     )
 }

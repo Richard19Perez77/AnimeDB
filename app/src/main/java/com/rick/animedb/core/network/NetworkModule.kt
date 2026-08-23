@@ -5,6 +5,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -19,6 +20,7 @@ object NetworkModule {
 
     private const val MangaDexBaseUrl = "https://api.mangadex.org/"
 
+    @OptIn(ExperimentalSerializationApi::class)
     @Provides
     @Singleton
     fun provideJson(): Json = Json {
@@ -26,6 +28,8 @@ object NetworkModule {
         isLenient = true
         coerceInputValues = true
         explicitNulls = false
+        prettyPrint = true
+        prettyPrintIndent = "  "
     }
 
     @Provides

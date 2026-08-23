@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -38,12 +36,4 @@ class MangaViewModel @Inject constructor(
                 }
         }
     }
-}
-
-private fun Throwable.toMangaError(): MangaError = when {
-    this is HttpException && code() == 429 -> MangaError.RateLimit
-    this is HttpException && code() in 500..599 -> MangaError.Unavailable
-    this is HttpException && code() == 403 -> MangaError.Unavailable
-    this is IOException -> MangaError.Network
-    else -> MangaError.Unknown
 }
