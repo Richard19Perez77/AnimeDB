@@ -23,10 +23,10 @@ enum class MangaError {
     Unknown,
 }
 
-fun Throwable.toMangaError(): MangaError = when {
-    this is HttpException && code() == 429 -> MangaError.RateLimit
-    this is HttpException && code() in 500..599 -> MangaError.Unavailable
-    this is HttpException && code() == 403 -> MangaError.Unavailable
-    this is IOException -> MangaError.Network
+fun Throwable.toMangaError(): MangaError = when (this) {
+    is HttpException if code() == 429 -> MangaError.RateLimit
+    is HttpException if code() in 500..599 -> MangaError.Unavailable
+    is HttpException if code() == 403 -> MangaError.Unavailable
+    is IOException -> MangaError.Network
     else -> MangaError.Unknown
 }
