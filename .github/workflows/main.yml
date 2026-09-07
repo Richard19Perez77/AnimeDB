@@ -1,0 +1,25 @@
+# Copy to: <android-repo>/.github/workflows/ci.yml
+# Use on CardWar, AnimeDB, OAuthOpenID, ApiUpgrade37, Workoutapp, JetpackSecurityAPI37.
+# Do not start with 49 workflows. One green badge on a pinned repo is enough.
+
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Unit tests and debug APK
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon
