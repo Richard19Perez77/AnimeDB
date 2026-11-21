@@ -1,5 +1,9 @@
 # AnimeDB
 
+<p>
+<img src="docs/screenshot.png" width="220" alt="AnimeDB top manga list" />
+</p>
+
 AnimeDB is a Jetpack Compose Android app for browsing manga from [MangaDex](https://mangadex.org/). It shows a ranked “top manga” list, then a detail screen with synopsis, tags, credits, related titles, and external links.
 
 The project is a working example of **clean architecture with MVVM**: Compose screens stay dumb, ViewModels own UI state, use cases talk to a domain repository, and Retrofit + Hilt handle the MangaDex API.
